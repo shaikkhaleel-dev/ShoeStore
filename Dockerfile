@@ -5,7 +5,7 @@ COPY pom.xml .
 COPY src ./src
 
 # This is the single, clean build line that completely skips tests
-RUN mvn clean package -Dmaven.test.skip=true
+RUN mvn clean package -Dmaven.test.skip=true -Dorg.slf4j.simpleLogger.defaultLogLevel=warn -XX:+UseSerialGC
 
 # Stage 2: Run the application
 FROM eclipse-temurin:17-jre-jammy
