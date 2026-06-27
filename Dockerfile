@@ -1,18 +1,24 @@
-# Stage 1: Build the application using Java 21
+# Stage 1: Build the WAR application using Java 21
 FROM maven:3.9-eclipse-temurin-21 AS build
 WORKDIR /app
 
+# Cache dependencies
 COPY pom.xml .
 RUN mvn dependency:go-offline -B
 
+# Copy source and build the WAR file
 COPY src ./src
 RUN mvn clean package -Dmaven.test.skip=true -B
 
-# Stage 2: Run the application using Java 21 JRE
-FROM eclipse-temurin:21-jre-jammy
-WORKDIR /app
-COPY --from=build /app/target/*.war app.war
+# Stage 2: Deploy to Apache Tomcat 10 with Java 21
+FROM tomcat:10.1-jdk21-temurin-jammy
+WORKDIR /usr/local/tomcat
+
+# Remove the default ROOT application provided by Tomcat
+RUN rm -rf webapps/ROOT webapps/ROOT.war
+
+# Copy your built war file into Tomcat's webapps directory as ROOT.war
+COPY --from=build /app/target/*.war webapps/ROOT.war
 
 EXPOSE 8080
-# FIXED: Pointing to app.war instead of app.jar
-ENTRYPOINT ["java", "-jar", "app.war"]
+CMD ["catalina.sh", "run"]
